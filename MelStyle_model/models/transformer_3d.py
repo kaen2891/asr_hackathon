@@ -243,7 +243,7 @@ class Model(nn.Module):
         self.num_encoder_layers = num_encoder_layers
         self.num_decoder_layers = num_decoder_layers
         
-        # mel 80, like paper
+        # mel 80, like paper SpecAugment (not done)
         
         self.conv = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1)), #78

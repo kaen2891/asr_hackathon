@@ -204,8 +204,8 @@ import torch.optim as optim
 
 import queue
 
-#from models.transformer import Model
-from models.transformer_3d import Model
+from models.transformer import Model  # 2d mel style vgg
+#from models.transformer_3d import Model # 3d CNN
 from models.utils import ScheduledOptim, LabelSmoothingLoss
 
 DATASET_PATH = '/mnt/junewoo/naver/'
@@ -271,9 +271,9 @@ def split_dataset( wav_paths, script_paths, valid_ratio=0.05):
     return train_batch_num, train_dataset_list, valid_dataset
 
 
-d_model_size = 1024
+d_model_size = 512
 model = Model(len(char2index), SOS_token, EOS_token, d_model=d_model_size, nhead=8, max_seq_len=1024, 
-                                                         num_encoder_layers=0, num_decoder_layers=6,
+                                                         num_encoder_layers=0, num_decoder_layers=4,
                                                          enc_feedforward=2048, dec_feedforward=2048,
                                                          dropout=0.1, padding_idx=PAD_token, mask_idx=MASK_token, device=device)
 
