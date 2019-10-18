@@ -32,3 +32,14 @@ TO DO
 3. Decoder에서 3개 정도의 다른 mask를 혹은 condition을 이용한 Ensemble?
 ==> 월요일에 정호영 교수님께 Ensemble 질문할것 
 ```
+
+
+Use
+
+```
+main.py ==> NSML
+main2.py ==> local
+
+dataset은 다운받아야 함
+
+```
