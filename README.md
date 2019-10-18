@@ -43,3 +43,10 @@ main2.py ==> local
 dataset은 다운받아야 함
 
 ```
+
+
+Notice
+```
+MelStyle_model 은 vgg style 로 구현한 것. 여기에 우선 SpecAugment 진행해야함
+Same_Weights_model은 준현이가 spectrogram 을 input 으로 받아서 구현해놓은 것.
+```
