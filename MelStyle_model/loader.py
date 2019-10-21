@@ -42,7 +42,7 @@ N_FFT = 512
 SAMPLE_RATE = 16000
 #hoplen = int(N_FFT/2)
 target_dict = dict()
-n_mels = 80
+n_mels = 40
 
 win_length=int(0.032*SAMPLE_RATE) #change 0930_1628
 hop_length=int(0.016*SAMPLE_RATE) #change 0930_1628

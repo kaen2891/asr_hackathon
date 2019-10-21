@@ -2,7 +2,7 @@ import time
 import queue
 import Levenshtein as Lev 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]= "1"
+os.environ["CUDA_VISIBLE_DEVICES"]= "4"
 import argparse
 parser = argparse.ArgumentParser(description='Speech hackathon Baseline')
 parser.add_argument('--infor', type=str, default='?')
@@ -36,14 +36,30 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
         feats, scripts, feat_lengths, script_lengths = queue.get()
         
         rand_for_aug = random.random()
+        """
         if rand_for_aug <= 0.5:
             new_feats = feats.numpy()
             new_feats = np.transpose(new_feats, (0, 2, 1))
             
             warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1) # LB
             #warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2) # LD
+            print(warped_masked_spectrogram.shape, "$$$$$$$$$$$$$$$$$$")
             feats = np.transpose(warped_masked_spectrogram, (0, 2, 1))
             feats = torch.from_numpy(feats)
+        """
+        new_feats = feats.numpy()
+        new_feats = np.transpose(new_feats, (0, 2, 1))
+ 
+        LB = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1)
+        LD = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2)
+        OG = new_feats
+      	
+        gathered = np.concatenate((LB,LD,OG), axis=0)
+        #print(gathered.shape, "##############")
+        feats = np.transpose(gathered, (0,2,1))
+        feats = torch.from_numpy(feats)
+        print(feats.shape, "$$$$$$$$$$") 
+        
         
         if feats.shape[0] == 0:
             # empty feats means closing one loader
@@ -60,6 +76,9 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
 
         feats = feats.to(device)
         scripts = scripts.to(device)
+        scripts = torch.cat([scripts,scripts,scripts], dim=0)
+        #batchsize change...
+        print(scripts.shape)
 
         src_len = scripts.size(1)
         #target = scripts[:, 1:]
@@ -208,11 +227,11 @@ from models.transformer import Model  # 2d mel style vgg
 #from models.transformer_3d import Model # 3d CNN
 from models.utils import ScheduledOptim, LabelSmoothingLoss
 
-DATASET_PATH = '/mnt/junewoo/naver/'
+DATASET_PATH = '/mnt/junewoo/naver/all_dataset/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
+#device = torch.device('cpu')
 char2index, index2char = label_loader.load_label("hackathon.labels")
 SOS_token = char2index['<s>']
 EOS_token = char2index['</s>']
@@ -227,7 +246,7 @@ MASK_token = char2index['[MASK]']
 #feature_size = N_FFT / 2 + 1#N_FFT: defined in loader.py
 feature_size = N_FFT / 2 #N_FFT: defined in loader.py
 
-batch_size = 64
+batch_size = 24
 epochs = 200
 
 teacher_forcing = True
