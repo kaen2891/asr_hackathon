@@ -50,3 +50,23 @@ Notice
 MelStyle_model 은 vgg style 로 구현한 것. 여기에 우선 SpecAugment 진행해야함
 Same_Weights_model은 준현이가 spectrogram 을 input 으로 받아서 구현해놓은 것.
 ```
+
+
+To Do List
+```
+June-Woo
+1. Power mel Spectrum Normalize (each spectrogram all 1)
+2. logAmplitude
+3. Normalize (all dataset zero mean, unit variance)
+
+4. use Mel 40 or 80 testing
+
+Jaeseok
+
+1. Dataset split
+2. Specaugment make batch
+
+Junhyun
+- Decorder tuning
+
+```
