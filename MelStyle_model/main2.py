@@ -2,9 +2,10 @@ import time
 import queue
 import Levenshtein as Lev 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]= "1"
+os.environ["CUDA_VISIBLE_DEVICES"]= "5"
 import argparse
-parser = argparse.ArgumentParser(description='Speech hackathon Baseline')
+parser = argparse.ArgumentParser()
+#parser = argparse.ArgumentParser(desc5iption='Speech hackathon Baseline')
 parser.add_argument('--infor', type=str, default='?')
 #parser.add_argument("--pause", type=int, default=0)
 from tensorboardX import SummaryWriter
@@ -35,15 +36,17 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
 
         feats, scripts, feat_lengths, script_lengths = queue.get()
         
-        rand_for_aug = random.random()
-        if rand_for_aug <= 0.5:
-            new_feats = feats.numpy()
-            new_feats = np.transpose(new_feats, (0, 2, 1))
-            
-            warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1) # LB
-            #warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2) # LD
-            feats = np.transpose(warped_masked_spectrogram, (0, 2, 1))
-            feats = torch.from_numpy(feats)
+        new_feats = feats.numpy()
+        new_feats = np.transpose(new_feats, (0, 2, 1))
+        
+        
+        LB = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1) #SpecAugment
+        LD = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2) #SpecAugment
+        OG = new_feats #Original
+        
+        gathered = np.concatenate((LB,LD,OG), axis=0)
+        feats = np.transpose(gathered, (0, 2, 1))
+        feats = torch.from_numpy(feats)
         
         if feats.shape[0] == 0:
             # empty feats means closing one loader
@@ -227,7 +230,7 @@ MASK_token = char2index['[MASK]']
 #feature_size = N_FFT / 2 + 1#N_FFT: defined in loader.py
 feature_size = N_FFT / 2 #N_FFT: defined in loader.py
 
-batch_size = 64
+batch_size = 32
 epochs = 200
 
 teacher_forcing = True

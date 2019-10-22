@@ -42,10 +42,10 @@ N_FFT = 512
 SAMPLE_RATE = 16000
 #hoplen = int(N_FFT/2)
 target_dict = dict()
-n_mels = 80
+n_mels = 40
 
 win_length=int(0.032*SAMPLE_RATE) #change 0930_1628
-hop_length=int(0.016*SAMPLE_RATE) #change 0930_1628
+overlap=int(0.016*SAMPLE_RATE) #change 0930_1628
 
 def load_targets(path):
     with open(path, 'r') as f:
@@ -53,9 +53,33 @@ def load_targets(path):
             key, target = line.strip().split(',')
             target_dict[key] = target
 
-def get_mel_feature(filepath):
+def get_mel_feature(filepath):  #with power norm
     y, fs = librosa.load(filepath, sr=SAMPLE_RATE)
+    
+    
+    ''' *** '''
+    ''' power normalization (zero mean) '''    
+    D = librosa.stft(y=y, n_fft=win_length, hop_length=overlap)
+    
+    D_mag, D_pha = librosa.magphase(D)
+    time = D.shape[-1]
+    
+    mag_sum = D_mag.sum()
+    pha_sum = D_pha.sum()
+    mag_power = mag_sum / time
+    pha_power = pha_sum / time
+
+    res_mag, res_pha = D_mag/mag_power, D_pha/pha_power
+
+    res_D = res_mag * res_pha
+    
+    power_norm_D = np.abs(res_D)**2
+    power_norm_mel = librosa.feature.melspectrogram(S=power_norm_D, sr=sr, n_mels=n_mels, fmax=8000, n_fft=win_length, hop_length=overlap)
+    
+
+    '''
     S = librosa.feature.melspectrogram(y=y, sr=fs, n_mels=n_mels, n_fft=win_length, hop_length=hop_length)
+    '''
     feat = torch.FloatTensor(S).transpose(0, 1)
     #feat = normalize(feat)
     
@@ -82,6 +106,7 @@ def get_spectrogram_feature(filepath, train=False):
     amag = stft.numpy();
     feat = torch.FloatTensor(amag)
     feat = torch.FloatTensor(feat).transpose(0, 1)
+    
     
 def get_script(filepath, bos_id, eos_id):
     key = filepath.split('/')[-1].split('.')[0]
