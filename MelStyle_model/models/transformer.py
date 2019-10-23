@@ -198,10 +198,11 @@ class Model(nn.Module):
             nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1)), #4 6 14
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1)), #2 4 7
+            nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1)), #2 4 12
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=(2,1), stride=(2,1)) #2 7
+            #nn.MaxPool2d(kernel_size=(1,2), stride=(1,2)) # when nmels 80 --> this is get 6
+            nn.MaxPool2d(kernel_size=(2,1), stride=(2,1)) #2
             #nn.Dropout(0.3)
         )
         
@@ -320,12 +321,14 @@ class Model(nn.Module):
         #conv2d
         batch_size = src.size(0)
         src = src[:,:self.max_seq_len]
+        #print("before input conv", src.size())
         src = self.conv(src.unsqueeze(1))
+        #print("output conv", src.size())
         src = src.transpose(1, 2)
         src = src.contiguous()
         sizes = src.size()
         src = src.view(sizes[0], sizes[1], sizes[2] * sizes[3])
-        
+        #print("final src pos shape is", src.size())
 
         src_pos = torch.LongTensor(range(src.size(1))).to(self.device)
         src = src + self.enc_pos_enc(src_pos)

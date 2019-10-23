@@ -7,6 +7,7 @@ import argparse
 parser = argparse.ArgumentParser()
 #parser = argparse.ArgumentParser(desc5iption='Speech hackathon Baseline')
 parser.add_argument('--infor', type=str, default='?')
+parser.add_argument('--log', type=str, default='False')
 #parser.add_argument("--pause", type=int, default=0)
 from tensorboardX import SummaryWriter
 summary = SummaryWriter()
@@ -47,7 +48,7 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
         gathered = np.concatenate((LB,LD,OG), axis=0)
         feats = np.transpose(gathered, (0, 2, 1))
         feats = torch.from_numpy(feats)
-        
+        #print("final input features are ", feats.size())
         if feats.shape[0] == 0:
             # empty feats means closing one loader
             train_loader_count -= 1
@@ -211,7 +212,7 @@ from models.transformer import Model  # 2d mel style vgg
 #from models.transformer_3d import Model # 3d CNN
 from models.utils import ScheduledOptim, LabelSmoothingLoss
 
-DATASET_PATH = '/mnt/junewoo/naver/'
+DATASET_PATH = '/mnt/junewoo/naver/all_dataset'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -230,11 +231,11 @@ MASK_token = char2index['[MASK]']
 #feature_size = N_FFT / 2 + 1#N_FFT: defined in loader.py
 feature_size = N_FFT / 2 #N_FFT: defined in loader.py
 
-batch_size = 32
+batch_size = 12
 epochs = 200
 
 teacher_forcing = True
-lr = 1e-8
+lr = 5e-8
 ##############################################################
 
 
@@ -274,6 +275,7 @@ def split_dataset( wav_paths, script_paths, valid_ratio=0.05):
     return train_batch_num, train_dataset_list, valid_dataset
 
 
+#d_model_size = 1536
 d_model_size = 512
 model = Model(len(char2index), SOS_token, EOS_token, d_model=d_model_size, nhead=8, max_seq_len=1024, 
                                                          num_encoder_layers=0, num_decoder_layers=4,
@@ -331,7 +333,7 @@ for epoch in range(epochs):
     valid_loader.start()
 
     eval_loss, eval_cer = evaluate(model, valid_loader, valid_queue, criterion, device)
-    print('---------------3DCNN_mel_40_vgg------------------Epoch %d (Evaluate) Loss %0.4f CER %0.4f' % (epoch, eval_loss, eval_cer))
+    print('Epoch %d (Evaluate) Loss %0.4f CER %0.4f' % (epoch, eval_loss, eval_cer))
     summary.add_scalar('eval_loss', eval_loss, epoch)
     summary.add_scalar('eval_cer', eval_cer, epoch)
     

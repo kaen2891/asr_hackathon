@@ -31,6 +31,7 @@ from torch.utils.data import Dataset, DataLoader
 from typing import Optional
 import numpy as np
 from warnings import warn
+from numpy import ma
 
 logger = logging.getLogger('root')
 FORMAT = "[%(asctime)s %(filename)s:%(lineno)s - %(funcName)s()] %(message)s"
@@ -43,6 +44,10 @@ SAMPLE_RATE = 16000
 #hoplen = int(N_FFT/2)
 target_dict = dict()
 n_mels = 40
+
+
+np.seterr(divide = 'ignore')
+np.seterr(divide = 'warn')
 
 win_length=int(0.032*SAMPLE_RATE) #change 0930_1628
 overlap=int(0.016*SAMPLE_RATE) #change 0930_1628
@@ -74,14 +79,23 @@ def get_mel_feature(filepath):  #with power norm
     res_D = res_mag * res_pha
     
     power_norm_D = np.abs(res_D)**2
-    power_norm_mel = librosa.feature.melspectrogram(S=power_norm_D, sr=sr, n_mels=n_mels, fmax=8000, n_fft=win_length, hop_length=overlap)
+    power_norm_mel = librosa.feature.melspectrogram(S=power_norm_D, sr=SAMPLE_RATE, n_mels=n_mels, fmax=8000, n_fft=win_length, hop_length=overlap)
     
 
     '''
     S = librosa.feature.melspectrogram(y=y, sr=fs, n_mels=n_mels, n_fft=win_length, hop_length=hop_length)
-    '''
+    
     feat = torch.FloatTensor(S).transpose(0, 1)
     #feat = normalize(feat)
+    '''
+    log = False
+    if log:
+        power_norm_mel = np.log10(power_norm_mel)
+        #print("log True")
+        
+            
+    
+    feat = torch.FloatTensor(power_norm_mel).transpose(0, 1)
     
     if feat.size(0) > 1024:
         feat = feat[:1024, :]
@@ -154,30 +168,20 @@ def _collate_fn(batch):
     target_lengths = [len(s[1]) for s in batch]
 
     max_seq_sample = max(batch, key=seq_length_)[0]
-    #print("max_seq_sample is ", np.shape(max_seq_sample))
     max_target_sample = max(batch, key=target_length_)[1]
-    #print("max_target_sample is", np.shape(max_target_sample))
-
     max_seq_size = max_seq_sample.size(0)
-    #print("max_seq_size is", max_seq_size)
+    
     
     ### add
     if max_seq_size % divide_num !=0:
         max_seq_size = ((max_seq_size//divide_num)+1)*divide_num
     
     max_target_size = len(max_target_sample)
-    #print("max_target_size is", max_target_size)
-
     feat_size = max_seq_sample.size(1)
-    #print("feat_size is", feat_size)
     batch_size = len(batch)
-    #print("batch_size is", batch_size)
-
+    
     seqs = torch.zeros(batch_size, max_seq_size, feat_size)
-    #print("seqs is", seqs.size())
-    #print("end of loader.....")
-    #print("------------")
-
+    
     targets = torch.zeros(batch_size, max_target_size).to(torch.long)
     targets.fill_(PAD)
 
@@ -188,7 +192,7 @@ def _collate_fn(batch):
         seq_length = tensor.size(0)
         seqs[x].narrow(0, 0, seq_length).copy_(tensor)
         targets[x].narrow(0, 0, len(target)).copy_(torch.LongTensor(target))
-
+    
     return seqs, targets, seq_lengths, target_lengths
 
 class BaseDataLoader(threading.Thread):
