@@ -231,11 +231,11 @@ MASK_token = char2index['[MASK]']
 #feature_size = N_FFT / 2 + 1#N_FFT: defined in loader.py
 feature_size = N_FFT / 2 #N_FFT: defined in loader.py
 
-batch_size = 12
+batch_size = 20
 epochs = 200
 
 teacher_forcing = True
-lr = 5e-8
+lr = 1e-8
 ##############################################################
 
 

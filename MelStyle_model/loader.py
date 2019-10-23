@@ -25,7 +25,6 @@ import torch
 import random
 import threading
 import logging
-#import torchaudio
 import librosa
 from torch.utils.data import Dataset, DataLoader
 from typing import Optional
@@ -41,7 +40,6 @@ logger.setLevel(logging.INFO)
 PAD = 0
 N_FFT = 512
 SAMPLE_RATE = 16000
-#hoplen = int(N_FFT/2)
 target_dict = dict()
 n_mels = 40
 
@@ -61,41 +59,35 @@ def load_targets(path):
 def get_mel_feature(filepath):  #with power norm
     y, fs = librosa.load(filepath, sr=SAMPLE_RATE)
     
+    S = librosa.feature.melspectrogram(y=y, sr=SAMPLE_RATE, n_mels=n_mels, n_fft=win_length, hop_length=overlap)
+    mel_dim = len(S)
+    time = S.shape[-1]
+    
     
     ''' *** '''
-    ''' power normalization (zero mean) '''    
-    D = librosa.stft(y=y, n_fft=win_length, hop_length=overlap)
+    ''' power normalization (mean=1) '''    
     
-    D_mag, D_pha = librosa.magphase(D)
-    time = D.shape[-1]
+    for k in range(mel_dim):
+        dim = S[k]
+        dim_sum = dim.sum()
+        average_dim_for_time = dim_sum / time
+        normalize_dim = dim / average_dim_for_time
+        S[k] = normalize_dim
     
-    mag_sum = D_mag.sum()
-    pha_sum = D_pha.sum()
-    mag_power = mag_sum / time
-    pha_power = pha_sum / time
-
-    res_mag, res_pha = D_mag/mag_power, D_pha/pha_power
-
-    res_D = res_mag * res_pha
-    
-    power_norm_D = np.abs(res_D)**2
-    power_norm_mel = librosa.feature.melspectrogram(S=power_norm_D, sr=SAMPLE_RATE, n_mels=n_mels, fmax=8000, n_fft=win_length, hop_length=overlap)
-    
-
+    ''' *** '''
+    ''' log mel spectrogram normalization (mean=0) '''
     '''
-    S = librosa.feature.melspectrogram(y=y, sr=fs, n_mels=n_mels, n_fft=win_length, hop_length=hop_length)
+    log_S = np.log10(S)
+    for k in range(mel_dim):
+        dim = log_S[k]
+        dim_sum = dim.sum()
+        average_dim_for_time = dim_sum / time
+        normalize_dim = dim - average_dim_for_time
+        S[k] = normalize_dim
+    '''
+    
     
     feat = torch.FloatTensor(S).transpose(0, 1)
-    #feat = normalize(feat)
-    '''
-    log = False
-    if log:
-        power_norm_mel = np.log10(power_norm_mel)
-        #print("log True")
-        
-            
-    
-    feat = torch.FloatTensor(power_norm_mel).transpose(0, 1)
     
     if feat.size(0) > 1024:
         feat = feat[:1024, :]
