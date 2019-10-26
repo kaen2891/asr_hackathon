@@ -74,10 +74,13 @@ def get_mel_feature(filepath):  #with power norm
         normalize_dim = dim / average_dim_for_time
         S[k] = normalize_dim
     
+    
     ''' *** '''
     ''' log mel spectrogram normalization (mean=0) '''
     '''
-    log_S = np.log10(S)
+    log_S = ma.log10(S)
+    log_S = log_S.filled(0)
+    
     for k in range(mel_dim):
         dim = log_S[k]
         dim_sum = dim.sum()
@@ -85,8 +88,6 @@ def get_mel_feature(filepath):  #with power norm
         normalize_dim = dim - average_dim_for_time
         S[k] = normalize_dim
     '''
-    
-    
     feat = torch.FloatTensor(S).transpose(0, 1)
     
     if feat.size(0) > 1024:

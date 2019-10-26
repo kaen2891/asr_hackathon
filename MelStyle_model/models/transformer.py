@@ -335,7 +335,7 @@ class Model(nn.Module):
 
         if mode == 'train':
             # Enhance Decoder's representation
-            mask_p = 0.2
+            mask_p = 0.5
             nonzero = torch.nonzero(tgt)
             rand = torch.randint(nonzero.size(0), (1,int(nonzero.size(0)*mask_p)))[0]
             nonzero = nonzero[rand].split(1, dim=1)

@@ -64,6 +64,8 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
 
         feats = feats.to(device)
         scripts = scripts.to(device)
+        ############
+        #scripts = torch.cat([scripts,scripts,scripts], dim=0) 
 
         src_len = scripts.size(1)
         #target = scripts[:, 1:]
@@ -235,7 +237,7 @@ batch_size = 20
 epochs = 200
 
 teacher_forcing = True
-lr = 1e-8
+lr = 1e-7 # 1025 test
 ##############################################################
 
 

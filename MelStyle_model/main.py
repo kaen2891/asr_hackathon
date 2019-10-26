@@ -119,25 +119,27 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
     while True:
         if queue.empty():
             logger.debug('queue is empty')
+            #print('queue is empty')
 
         feats, scripts, feat_lengths, script_lengths = queue.get()
         
-        rand_for_aug = random.random()
-        if rand_for_aug <= 0.5:
-            new_feats = feats.numpy()
-            new_feats = np.transpose(new_feats, (0, 2, 1))
-            
-            warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1) # LB
-            #warped_masked_spectrogram = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2) # LD
-            feats = np.transpose(warped_masked_spectrogram, (0, 2, 1))
-            feats = torch.from_numpy(feats)
-            
-
+        new_feats = feats.numpy()
+        new_feats = np.transpose(new_feats, (0, 2, 1))
+        
+        
+        LB = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=1) #SpecAugment
+        LD = spec_augment_pytorch.spec_augment(mel_spectrogram=new_feats, frequency_mask_num=2) #SpecAugment
+        OG = new_feats #Original
+        
+        gathered = np.concatenate((LB,LD,OG), axis=0)
+        feats = np.transpose(gathered, (0, 2, 1))
+        feats = torch.from_numpy(feats)
+        #print("final input features are ", feats.size())
         if feats.shape[0] == 0:
             # empty feats means closing one loader
             train_loader_count -= 1
 
-            logger.debug('left train_loader: %d' % (train_loader_count))
+            #print('left train_loader: %d' % (train_loader_count))
 
             if train_loader_count == 0:
                 break
@@ -148,7 +150,8 @@ def train(model, total_batch_size, queue, criterion, optimizer, device, train_be
 
         feats = feats.to(device)
         scripts = scripts.to(device)
-
+        ############
+        scripts = torch.cat([scripts,scripts,scripts], dim=0) 
         src_len = scripts.size(1)
         target = scripts[:, 1:].clone()
 
@@ -383,6 +386,8 @@ def main():
 
     # For Loading...
     #nsml.load(checkpoint='best', session="team185/sr-hack-2019-dataset/501")
+    
+    
     #nsml.save(args.save_name)
     #exit()
 
